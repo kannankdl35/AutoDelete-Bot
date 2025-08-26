@@ -161,14 +161,14 @@ async def main():
 
     scheduler = AsyncIOScheduler(event_loop=loop)
     scheduler.start()
-    scheduler.add_job(delete_messages, 'interval', minutes=10, id="regular_cleanup")
+    scheduler.add_job(delete_messages, 'interval', minutes=10, id="regular_cleanup") #Must Be Above ID_DUR values
 
     app = Client("AutoWiperBot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
     user = Client("UserAutoWiper", api_id=API_ID, api_hash=API_HASH, session_string=SESSION)
 
     app.add_handler(MessageHandler(
         handle_bot_commands,
-        filters=filters.command(["start", "help", "status", "ping"]) & filters.private
+        filters=filters.command(["start", "status", "ping"]) & filters.private
     ))
 
     user.add_handler(MessageHandler(
