@@ -9,7 +9,7 @@ import uuid
 from pyrogram import Client, filters
 from pyrogram.handlers import MessageHandler
 from pyrogram.errors import FloodWait, ChannelPrivate, MessageDeleteForbidden
-from config import API_ID, API_HASH, BOT_TOKEN, SESSION, CHANNEL_IDS, ID_DUR
+from config import API_ID, API_HASH, BOT_TOKEN, SESSION, CHAT_IDS, ID_DUR
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -92,7 +92,7 @@ async def handle_bot_commands(client, message):
             f"**Bot Status**\n\n"
             f"• Uptime: `{uptime}`\n"
             f"• Active deletion jobs: `{active_jobs}`\n"
-            f"• Monitored chats: `{len(CHANNEL_IDS)}`"
+            f"• Monitored chats: `{len(CHAT_IDS)}`"
         )
     elif cmd == "ping":
         start = datetime.now()
@@ -125,15 +125,15 @@ async def handle_user_commands(client, message):
         os.execl(sys.executable, sys.executable, *sys.argv)
 
     elif cmd == "chats":
-        if not CHANNEL_IDS:
+        if not CHAT_IDS:
             await message.reply_text("⚠️ No chats are currently being monitored.")
         else:
-            text = "**📝 Monitored Chats:**\n" + "\n".join([f"`{cid}`" for cid in CHANNEL_IDS])
+            text = "**📝 Monitored Chats:**\n" + "\n".join([f"`{cid}`" for cid in CHAT_IDS])
             await message.reply_text(text)
 
 async def delete_messages(reply=None):
     time_limit = datetime.now() - timedelta(hours=24)
-    tasks = [process_chat_history(chat_id, time_limit) for chat_id in CHANNEL_IDS]
+    tasks = [process_chat_history(chat_id, time_limit) for chat_id in CHAT_IDS]
     await asyncio.gather(*tasks, return_exceptions=True)
 
     if reply:
@@ -173,7 +173,7 @@ async def main():
 
     user.add_handler(MessageHandler(
         handle_messages,
-        filters=filters.chat(CHANNEL_IDS) & ~filters.pinned_message
+        filters=filters.chat(CHAT_IDS) & ~filters.pinned_message
     ))
 
     user.add_handler(MessageHandler(
@@ -196,7 +196,7 @@ async def main():
         await delete_messages()
         logger.info("Bot is now running on your VPS!")
 
-        if not CHANNEL_IDS:
+        if not CHAT_IDS:
             logger.warning("No channels configured - bot will do nothing")
 
         await shutdown_event.wait()

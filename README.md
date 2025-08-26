@@ -93,7 +93,7 @@
    SESSION = "your_user_session_string_here"
    
    # Chat Configuration
-   CHANNEL_IDS = [-1001234567890, -1009876543210]  # Chat IDs to monitor
+   CHAT_IDS = [-1001234567890, -1009876543210]  # Chat IDs to monitor
    
    # Delete Timer Configuration (in seconds)
    ID_DUR = {
@@ -155,7 +155,7 @@ API_ID=your_api_id
 API_HASH=your_api_hash
 BOT_TOKEN=your_bot_token
 SESSION=your_session_string
-CHANNEL_IDS=[-1001234567890,-1009876543210]
+CHAT_IDS=[-1001234567890,-1009876543210]
 ```
 
 ### Timer Configuration Examples

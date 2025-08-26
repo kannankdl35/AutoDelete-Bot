@@ -1,5 +1,5 @@
 # List of channel/group IDs to monitor
-CHANNEL_IDS = [
+CHAT_IDS = [
     -1001111111111,
     -1002222222222
 ]
