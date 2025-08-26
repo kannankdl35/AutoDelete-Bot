@@ -1,0 +1,78 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.orig
+*.rej
+.*.swp
+.*.swo
+*.pyc
+*.pyo
+.pytest_cache/
+.coverage
+.nox/
+htmlcov/
+.tox/
+.coverage.*
+.cache
+.stestr/
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.pytest/
+ipynb_checkpoints/
+profile_default/
+jupyter_console_config.py
+ipython_config.py
+startup.py
+
+# Environment variables
+.env
+.env.local
+.env.production
+.env.development
+.env.staging
+
+# IDE and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Pyrogram Session
+session.session
+*.session
+*.session-journal
+
+# Configuration files (sensitive)
+config.py
+secrets.py
+
+# Logs
+logs/
+*.log
+
+# OS Generated
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
