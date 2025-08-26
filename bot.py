@@ -178,7 +178,7 @@ async def main():
 
     user.add_handler(MessageHandler(
         handle_user_commands,
-        filters=filters.command(["delete", "update", "restart", "chats"])
+        filters.private & filters.command(["delete", "update", "restart", "chats"])
     ))
 
     await app.start()
