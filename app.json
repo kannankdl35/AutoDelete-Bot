@@ -1,0 +1,142 @@
+{
+  "name": "AutoWiper - Telegram Auto-Cleaner Bot",
+  "description": "🧹 A lightweight Telegram auto-cleaner bot that automatically deletes messages in groups and channels after a set time. Keep your chats clutter-free, spam-free, and organized — automatically.",
+  "keywords": [
+    "telegram",
+    "bot",
+    "auto-delete",
+    "cleaner",
+    "pyrogram",
+    "scheduler",
+    "group-management",
+    "spam-free"
+  ],
+  "website": "https://github.com/PIROXTG/AutoWiper",
+  "repository": "https://github.com/PIROXTG/AutoWiper",
+  "logo": "https://telegra.ph/file/8f6e8c2f1b59c5c6c9b0d.png",
+  "success_url": "/",
+  "stack": "heroku-20",
+  "formation": {
+    "worker": {
+      "quantity": 1,
+      "size": "eco"
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ],
+  "env": {
+    "API_ID": {
+      "description": "Your Telegram API ID from https://my.telegram.org/apps",
+      "value": "",
+      "required": true
+    },
+    "API_HASH": {
+      "description": "Your Telegram API Hash from https://my.telegram.org/apps",
+      "value": "",
+      "required": true
+    },
+    "BOT_TOKEN": {
+      "description": "Your Bot Token from @BotFather on Telegram",
+      "value": "",
+      "required": true
+    },
+    "SESSION": {
+      "description": "Your User Session String from @SessionStringZBot (trusted generator)",
+      "value": "",
+      "required": true
+    },
+    "CHAT_IDS": {
+      "description": "Comma-separated list of chat IDs to monitor (negative numbers for groups/channels). Example: [-1001234567890,-1009876543210]",
+      "value": "[-1001234567890]",
+      "required": true
+    },
+    "DELETE_TIMERS": {
+      "description": "Optional: Custom delete timers for each chat. Format: chat_id:seconds,chat_id:seconds. Example: -1001234567890:3600,-1009876543210:7200",
+      "value": "",
+      "required": false
+    },
+    "LOG_LEVEL": {
+      "description": "Logging level for the application",
+      "value": "INFO",
+      "required": false
+    },
+    "CLEANUP_INTERVAL_MINUTES": {
+      "description": "Interval in minutes between scheduled cleanups",
+      "value": "4",
+      "required": false
+    },
+    "MAX_MESSAGE_HISTORY_HOURS": {
+      "description": "Maximum hours of message history to process during cleanup",
+      "value": "24",
+      "required": false
+    },
+    "HEARTBEAT_INTERVAL": {
+      "description": "Heartbeat interval in seconds for health monitoring",
+      "value": "300",
+      "required": false
+    },
+    "ENVIRONMENT": {
+      "description": "Deployment environment",
+      "value": "production",
+      "required": false
+    },
+    "TZ": {
+      "description": "Timezone for the application",
+      "value": "UTC",
+      "required": false
+    }
+  },
+  "scripts": {
+    "postdeploy": "echo 'AutoWiper Bot deployed successfully! Check your Telegram for startup confirmation.'"
+  },
+  "addons": [
+    {
+      "plan": "heroku-postgresql:mini",
+      "as": "DATABASE"
+    }
+  ],
+  "environments": {
+    "test": {
+      "addons": [
+        "heroku-postgresql:mini"
+      ],
+      "env": {
+        "LOG_LEVEL": "DEBUG",
+        "ENVIRONMENT": "test"
+      },
+      "formation": {
+        "worker": {
+          "quantity": 1,
+          "size": "eco"
+        }
+      },
+      "scripts": {
+        "test": "python -m pytest"
+      }
+    },
+    "staging": {
+      "addons": [
+        "heroku-postgresql:mini"
+      ],
+      "env": {
+        "LOG_LEVEL": "DEBUG",
+        "ENVIRONMENT": "staging"
+      },
+      "formation": {
+        "worker": {
+          "quantity": 1,
+          "size": "eco"
+        }
+      }
+    }
+  },
+  "image": "heroku/python",
+  "mount_dir": "src",
+  "features": [
+    "runtime-dyno-metadata"
+  ],
+  "stack": "heroku-22"
+}
