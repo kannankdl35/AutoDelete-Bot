@@ -12,7 +12,10 @@ from pyrogram.errors import FloodWait, ChannelPrivate, MessageDeleteForbidden
 from config import API_ID, API_HASH, BOT_TOKEN, SESSION, CHAT_IDS, ID_DUR
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - 🤖 %(name)s - %(levelname)s - ✨ %(message)s'
+)
 logger = logging.getLogger(__name__)
 start_time = datetime.now()
 
@@ -20,29 +23,33 @@ scheduler = None
 app = None
 user = None
 shutdown_event = None
+OWNER_ID = None
 
 async def process_delete(chat_id, msg_id):
     try:
         await app.delete_messages(chat_id, msg_id)
-        logger.info(f"Deleted message {msg_id} from {chat_id}")
+        logger.info(f"🗑️ Deleted message {msg_id} from {chat_id}")
     except (ChannelPrivate, MessageDeleteForbidden):
-        logger.warning(f"Cannot delete message {msg_id} in {chat_id} - no permission")
+        logger.warning(f"🔒 Cannot delete message {msg_id} in {chat_id} - no permission")
     except FloodWait as e:
-        logger.warning(f"FloodWait for {e.value} seconds")
-        await asyncio.sleep(e.value)
+        wait_time = e.value
+        logger.warning(f"⏳ FloodWait {wait_time}s for {chat_id}:{msg_id} - retrying after delay")
+        await asyncio.sleep(wait_time)
         await process_delete(chat_id, msg_id)
     except Exception as e:
-        logger.error(f"Delete error {chat_id}:{msg_id} - {e}")
+        logger.error(f"💥 Delete failed {chat_id}:{msg_id} - {e}")
 
 def schedule_deletion(chat_id, msg_id, duration):
     if duration:
+        job_id = f"delete_{uuid.uuid4().hex}"
         scheduler.add_job(
             process_delete,
             'date',
             run_date=datetime.now() + timedelta(seconds=duration),
             args=[chat_id, msg_id],
-            id=f"delete_{uuid.uuid4().hex}"
+            id=job_id
         )
+        logger.debug(f"⏰ Scheduled deletion of {msg_id} in {duration}s (Job: {job_id})")
 
 async def handle_messages(client, message, is_new=True, duration=None):
     duration = duration or ID_DUR.get(message.chat.id)
@@ -53,82 +60,96 @@ async def process_chat_history(chat_id, time_limit):
     try:
         duration = ID_DUR.get(chat_id)
         if not duration:
+            logger.info(f"⚠️ No duration set for chat {chat_id}, skipping history cleanup")
             return
-            
+
         message_count = 0
         processed_ids = set()
-        
+        logger.info(f"🔍 Starting history cleanup for chat {chat_id}...")
+
         async for msg in user.get_chat_history(chat_id, limit=21000):
             if not msg.date or msg.date < time_limit:
                 break
-                
+
             if msg.id in processed_ids:
                 continue
-                
+
             await handle_messages(user, msg, is_new=False, duration=duration)
             processed_ids.add(msg.id)
-            
             message_count += 1
+
             if message_count % 100 == 0:
+                logger.info(f"📊 Processed {message_count} messages in {chat_id}")
                 await asyncio.sleep(1)
-                
-        logger.info(f"Scheduled {message_count} messages for deletion in chat {chat_id}")
+
+        logger.info(f"✅ Scheduled {message_count} old messages for deletion in {chat_id}")
+
     except Exception as e:
-        logger.error(f"Error processing chat history for {chat_id}: {e}")
+        logger.error(f"❌ Failed to process history for {chat_id}: {e}")
 
 async def handle_bot_commands(client, message):
     cmd = message.command[0].lower()
 
-    if cmd in ["start"]:
+    if cmd == "start":
         await message.reply_text(
-            "**👋 Hello! I'm your Group Auto-Cleaner Bot.**\n\n"
-            "I automatically **delete all messages** in groups after a fixed time interval to keep things **clean, clutter-free, and spam-free**."
+            "👋 **Hello! I'm your Group Auto-Cleaner Bot.**\n\n"
+            "🗑️ I automatically **delete all messages** after a set time.\n"
+            "✨ Keep your groups **clean, clutter-free, and spam-free!**"
         )
 
     elif cmd == "status":
         uptime = str(datetime.now() - start_time).split('.')[0]
         active_jobs = len(scheduler.get_jobs())
         await message.reply_text(
-            f"**Bot Status**\n\n"
-            f"• Uptime: `{uptime}`\n"
-            f"• Active deletion jobs: `{active_jobs}`\n"
-            f"• Monitored chats: `{len(CHAT_IDS)}`"
+            f"📊 **Bot Status**\n\n"
+            f"⏳ Uptime: `{uptime}`\n"
+            f"⚙️ Active Jobs: `{active_jobs}`\n"
+            f"📌 Monitored Chats: `{len(CHAT_IDS)}`\n"
+            f"🛡️ Status: `🟢 Running`"
         )
+
     elif cmd == "ping":
         start = datetime.now()
-        msg = await message.reply_text("Pinging...")
+        msg = await message.reply_text("🏓 Pinging...")
         latency = (datetime.now() - start).total_seconds()
-        await msg.edit_text(f"🏓 Pong!\nLatency: `{latency:.3f}s`")
+        await msg.edit_text(f"🏓 **Pong!**\n⏱️ Latency: `{latency:.3f}s`")
 
 async def handle_user_commands(client, message):
+    if message.from_user.id != OWNER_ID:
+        logger.warning(f"🚫 Unauthorized command attempt by user {message.from_user.id}")
+        return
+
     cmd = message.command[0].lower()
+    logger.info(f"🛠️ Executing command: /{cmd} from owner")
 
     if cmd == "delete":
-        reply = await message.reply_text("Processing messages...")
+        reply = await message.reply_text("🔄 Processing messages...")
         await delete_messages(reply)
 
     elif cmd == "update":
         try:
-            msg = await message.reply_text("🔄 Checking for updates...")
-            process = subprocess.run(["git", "pull"], capture_output=True, text=True)
+            msg = await message.reply_text("📥 Checking for updates...")
+            result = subprocess.run(["git", "pull"], capture_output=True, text=True)
 
-            if process.returncode != 0:
-                return await msg.edit_text(f"❌ Update failed:\n`{process.stderr}`")
+            if result.returncode != 0:
+                await msg.edit_text(f"❌ Update failed:\n```\n{result.stderr}\n```")
+                return
 
-            await msg.edit_text("✅ Update successful! Restarting bot...")
+            await msg.edit_text("✅ Update successful! 🔁 Restarting...")
             os.execl(sys.executable, sys.executable, *sys.argv)
+
         except Exception as e:
-            await message.reply_text(f"❌ Error occurred: {str(e)}")
+            await message.reply_text(f"💥 Error: `{str(e)}`")
 
     elif cmd == "restart":
-        await message.reply_text("🔄 Restarting...")
+        await message.reply_text("🔁 Restarting bot...")
         os.execl(sys.executable, sys.executable, *sys.argv)
 
     elif cmd == "chats":
         if not CHAT_IDS:
-            await message.reply_text("⚠️ No chats are currently being monitored.")
+            await message.reply_text("⚠️ No chats are being monitored.")
         else:
-            text = "**📝 Monitored Chats:**\n" + "\n".join([f"`{cid}`" for cid in CHAT_IDS])
+            text = "📌 **Monitored Chats:**\n" + "\n".join([f"🔐 `{cid}`" for cid in CHAT_IDS])
             await message.reply_text(text)
 
 async def delete_messages(reply=None):
@@ -137,21 +158,22 @@ async def delete_messages(reply=None):
     await asyncio.gather(*tasks, return_exceptions=True)
 
     if reply:
-        await reply.edit_text("Processing completed")
+        queue_size = sum(1 for job in scheduler.get_jobs() if job.id.startswith("delete_"))
+        await reply.edit_text(f"✅ Cleanup complete! 📦 {queue_size} deletions scheduled.")
 
 async def heartbeat():
     while not shutdown_event.is_set():
         try:
             uptime = str(datetime.now() - start_time).split('.')[0]
             active_jobs = len(scheduler.get_jobs())
-            logger.info(f"Heartbeat - Bot running for {uptime}, active jobs: {active_jobs}")
+            logger.info(f"💓 Heartbeat | ⏳ Up: {uptime} | 🛠️ Jobs: {active_jobs}")
             await asyncio.sleep(300)
         except Exception as e:
-            logger.error(f"Heartbeat error: {e}")
+            logger.error(f"💔 Heartbeat failed: {e}")
             await asyncio.sleep(60)
 
 async def main():
-    global app, user, scheduler, shutdown_event
+    global app, user, scheduler, shutdown_event, OWNER_ID
 
     loop = asyncio.get_running_loop()
     shutdown_event = asyncio.Event()
@@ -162,6 +184,7 @@ async def main():
     scheduler = AsyncIOScheduler(event_loop=loop)
     scheduler.start()
     scheduler.add_job(delete_messages, 'interval', minutes=4, id="regular_cleanup")
+    logger.info("⏰ Scheduler started with regular cleanup every 4 minutes.")
 
     app = Client("AutoWiperBot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
     user = Client("UserAutoWiper", api_id=API_ID, api_hash=API_HASH, session_string=SESSION)
@@ -184,23 +207,39 @@ async def main():
     await app.start()
     await user.start()
 
+    me = await user.get_me()
+    OWNER_ID = me.id
+    logger.info(f"🎯 Owner ID auto-set to: {OWNER_ID} (@{me.username or 'Unknown'})")
+
     try:
-        me = await user.get_me()
-        await user.send_message(me.id, "✅ Bot has started and is running on your VPS.")
+        await user.send_message(
+            me.id,
+            "✅ **Auto-Cleaner Bot Started!**\n\n"
+            f"📊 Monitoring: `{len(CHAT_IDS)}` groups\n"
+            f"🗑️ Auto-delete enabled\n"
+            f"🛠️ Admin commands active for you only.\n"
+            f"ℹ️ Use `/status`, `/chats`, `/delete` as needed."
+        )
     except Exception as e:
-        logger.error(f"Failed to send startup message: {e}")
+        logger.error(f"📩 Failed to send startup message: {e}")
 
     heartbeat_task = loop.create_task(heartbeat())
 
     try:
         await delete_messages()
-        logger.info("Bot is now running on your VPS!")
+        logger.info("🚀 Bot is now running on your VPS! 🌐")
 
         if not CHAT_IDS:
-            logger.warning("No channels configured - bot will do nothing")
+            logger.warning("⚠️ No CHAT_IDS configured — bot will not monitor any chats.")
 
         await shutdown_event.wait()
+
+    except Exception as e:
+        logger.error(f"💥 Critical error: {e}")
+
     finally:
+        logger.info("🛑 Shutting down gracefully...")
+
         if 'heartbeat_task' in locals() and not heartbeat_task.done():
             heartbeat_task.cancel()
             try:
@@ -216,11 +255,13 @@ async def main():
 
         if scheduler and scheduler.running:
             scheduler.shutdown()
+            logger.info("📋 Scheduler stopped.")
 
-        logger.info("Cleanup complete. Bot stopped.")
+        logger.info("✅ Bot stopped gracefully. Goodbye! 👋")
+
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        pass
+        logger.info("🛑 Bot stopped manually by user.")
