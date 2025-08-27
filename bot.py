@@ -6,6 +6,7 @@ import signal
 import subprocess
 from datetime import datetime, timedelta
 import uuid
+import psutil
 from pyrogram import Client, filters
 from pyrogram.handlers import MessageHandler
 from pyrogram.errors import FloodWait, ChannelPrivate, MessageDeleteForbidden
@@ -100,13 +101,26 @@ async def handle_bot_commands(client, message):
     elif cmd == "status":
         uptime = str(datetime.now() - start_time).split('.')[0]
         active_jobs = len(scheduler.get_jobs())
-        await message.reply_text(
+
+        cpu_percent = psutil.cpu_percent(interval=1)
+        memory = psutil.virtual_memory()
+        disk = psutil.disk_usage('/')
+        load_avg = psutil.getloadavg() if hasattr(psutil, "getloadavg") else (0, 0, 0)
+
+        status_text = (
             f"📊 **Bot Status**\n\n"
             f"⏳ Uptime: `{uptime}`\n"
             f"⚙️ Active Jobs: `{active_jobs}`\n"
             f"📌 Monitored Chats: `{len(CHAT_IDS)}`\n"
-            f"🛡️ Status: `🟢 Running`"
+            f"🛡️ Status: `🟢 Running`\n\n"
+            f"💻 **System Stats**\n"
+            f"🔹 CPU: `{cpu_percent}%`\n"
+            f"🔹 RAM: `{memory.percent}% of {round(memory.total / (1024**3), 2)} GB`\n"
+            f"🔹 Disk: `{disk.percent}% of {round(disk.total / (1024**3), 2)} GB`\n"
+            f"🔹 Load Avg (1m, 5m, 15m): `{load_avg[0]:.2f}, {load_avg[1]:.2f}, {load_avg[2]:.2f}`"
         )
+
+        await message.reply_text(status_text)
 
     elif cmd == "ping":
         start = datetime.now()
