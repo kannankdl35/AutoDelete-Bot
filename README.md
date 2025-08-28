@@ -1,6 +1,6 @@
 # AutoWiper 🧹 - Koyeb Edition
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
 [![Pyrogram](https://img.shields.io/badge/Pyrogram-v2.0-red)](https://docs.pyrogram.org/)
 [![Made with Python](https://img.shields.io/badge/Made%20with-Python-37766B.svg?logo=python&logoColor=white)](https://www.python.org/)
 [![Deploy on Koyeb](https://img.shields.io/badge/Deploy-Koyeb-00C7B7)](https://www.koyeb.com/)
@@ -422,13 +422,9 @@ AutoWiper (Koyeb Edition)
 
 ## 📄 License
 
-This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
+This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)** - see the [LICENSE](LICENSE) file for details.
 
-**Open Source Libraries**:
-- Pyrogram: LGPL-3.0 License
-- aiohttp: Apache-2.0 License  
-- APScheduler: MIT License
-- psutil: BSD-3-Clause License
+🔒 **Important**: Any modifications, forks, or derivative works must also be released under AGPL-3.0 and publicly share their source code if deployed or made accessible over a network.
 
 ---
 
