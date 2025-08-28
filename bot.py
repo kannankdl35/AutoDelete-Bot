@@ -7,6 +7,8 @@ import subprocess
 from datetime import datetime, timedelta
 import uuid
 import psutil
+import aiohttp
+from aiohttp import web
 from pyrogram import Client, filters
 from pyrogram.handlers import MessageHandler
 from pyrogram.errors import FloodWait, ChannelPrivate, MessageDeleteForbidden
@@ -23,8 +25,155 @@ start_time = datetime.now()
 scheduler = None
 app = None
 user = None
+web_app = None
 shutdown_event = None
 OWNER_ID = None
+
+PORT = int(os.environ.get("PORT", 8080))
+HOST = "0.0.0.0"
+
+async def health_check(request):
+    uptime = str(datetime.now() - start_time).split('.')[0]
+    active_jobs = len(scheduler.get_jobs()) if scheduler else 0
+    
+    health_data = {
+        "status": "healthy",
+        "uptime": uptime,
+        "active_jobs": active_jobs,
+        "monitored_chats": len(CHAT_IDS),
+        "timestamp": datetime.now().isoformat(),
+        "bot_running": app.is_connected if app else False,
+        "user_running": user.is_connected if user else False
+    }
+    
+    return web.json_response(health_data)
+
+async def root_handler(request):
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Auto-Cleaner Bot</title>
+        <style>
+            body {{ 
+                font-family: Arial, sans-serif; 
+                max-width: 800px; 
+                margin: 0 auto; 
+                padding: 20px;
+                background-color: #f5f5f5;
+            }}
+            .container {{ 
+                background: white; 
+                padding: 30px; 
+                border-radius: 10px; 
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }}
+            .status {{ 
+                background: #e8f5e8; 
+                padding: 15px; 
+                border-radius: 5px; 
+                border-left: 4px solid #4CAF50;
+                margin: 20px 0;
+            }}
+            h1 {{ color: #333; }}
+            .metric {{ margin: 10px 0; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🤖 Auto-Cleaner Bot</h1>
+            <div class="status">
+                <h3>✅ Bot Status: Running</h3>
+                <div class="metric">⏳ Uptime: {str(datetime.now() - start_time).split('.')[0]}</div>
+                <div class="metric">📌 Monitored Chats: {len(CHAT_IDS)}</div>
+                <div class="metric">⚙️ Active Jobs: {len(scheduler.get_jobs()) if scheduler else 0}</div>
+                <div class="metric">🕐 Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div>
+            </div>
+            
+            <h3>🔧 Features</h3>
+            <ul>
+                <li>🗑️ Automatic message deletion after set duration</li>
+                <li>📊 Real-time monitoring and statistics</li>
+                <li>🛡️ Admin commands for bot management</li>
+                <li>⏰ Scheduled cleanup every 4 minutes</li>
+                <li>🌐 Web dashboard for monitoring</li>
+            </ul>
+            
+            <p><a href="/health">🩺 Health Check</a> | <a href="/stats">📊 Statistics</a></p>
+        </div>
+    </body>
+    </html>
+    """
+    return web.Response(text=html_content, content_type='text/html')
+
+async def stats_handler(request):
+    try:
+        cpu_percent = psutil.cpu_percent(interval=0.1)
+        memory = psutil.virtual_memory()
+        disk = psutil.disk_usage('/')
+        load_avg = psutil.getloadavg() if hasattr(psutil, "getloadavg") else (0, 0, 0)
+        
+        stats_data = {
+            "uptime": str(datetime.now() - start_time).split('.')[0],
+            "active_jobs": len(scheduler.get_jobs()) if scheduler else 0,
+            "monitored_chats": len(CHAT_IDS),
+            "system": {
+                "cpu_percent": round(cpu_percent, 2),
+                "memory_percent": round(memory.percent, 2),
+                "memory_total_gb": round(memory.total / (1024**3), 2),
+                "disk_percent": round(disk.percent, 2),
+                "disk_total_gb": round(disk.total / (1024**3), 2),
+                "load_avg": [round(x, 2) for x in load_avg]
+            },
+            "bot_status": {
+                "bot_connected": app.is_connected if app else False,
+                "user_connected": user.is_connected if user else False,
+                "scheduler_running": scheduler.running if scheduler else False
+            },
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        return web.json_response(stats_data)
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
+async def create_web_app():
+    webapp = web.Application()
+    
+    webapp.router.add_get('/', root_handler)
+    webapp.router.add_get('/health', health_check)
+    webapp.router.add_get('/stats', stats_handler)
+    
+    return webapp
+
+async def start_web_server():
+    global web_app
+    
+    web_app = await create_web_app()
+    runner = web.AppRunner(web_app)
+    await runner.setup()
+    
+    site = web.TCPSite(runner, HOST, PORT)
+    await site.start()
+    
+    logger.info(f"🌐 Web server started on http://{HOST}:{PORT}")
+    return runner
+
+async def ping_web_server():
+    base_url = f"http://localhost:{PORT}"
+    
+    while not shutdown_event.is_set():
+        try:
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session:
+                async with session.get(f"{base_url}/health") as response:
+                    if response.status == 200:
+                        logger.debug(f"🏓 Web server ping successful: {response.status}")
+                    else:
+                        logger.warning(f"⚠️ Web server ping returned status: {response.status}")
+        except Exception as e:
+            logger.warning(f"💔 Web server ping failed: {e}")
+        
+        await asyncio.sleep(120)
 
 async def process_delete(chat_id, msg_id):
     try:
@@ -95,7 +244,8 @@ async def handle_bot_commands(client, message):
         await message.reply_text(
             "👋 **Hello! I'm your Group Auto-Cleaner Bot.**\n\n"
             "🗑️ I automatically **delete all messages** after a set time.\n"
-            "✨ Keep your groups **clean, clutter-free, and spam-free!**"
+            "✨ Keep your groups **clean, clutter-free, and spam-free!**\n\n"
+            f"🌐 Web Dashboard: http://localhost:{PORT}"
         )
 
     elif cmd == "status":
@@ -112,7 +262,8 @@ async def handle_bot_commands(client, message):
             f"⏳ Uptime: `{uptime}`\n"
             f"⚙️ Active Jobs: `{active_jobs}`\n"
             f"📌 Monitored Chats: `{len(CHAT_IDS)}`\n"
-            f"🛡️ Status: `🟢 Running`\n\n"
+            f"🛡️ Status: `🟢 Running`\n"
+            f"🌐 Web Server: `http://localhost:{PORT}`\n\n"
             f"💻 **System Stats**\n"
             f"🔹 CPU: `{cpu_percent}%`\n"
             f"🔹 RAM: `{memory.percent}% of {round(memory.total / (1024**3), 2)} GB`\n"
@@ -166,6 +317,15 @@ async def handle_user_commands(client, message):
             text = "📌 **Monitored Chats:**\n" + "\n".join([f"🔐 `{cid}`" for cid in CHAT_IDS])
             await message.reply_text(text)
 
+    elif cmd == "webapp":
+        await message.reply_text(
+            f"🌐 **Web Dashboard Info:**\n\n"
+            f"📍 URL: `http://localhost:{PORT}`\n"
+            f"🩺 Health: `/health`\n"
+            f"📊 Stats: `/stats`\n"
+            f"🔧 Status: `{'🟢 Running' if web_app else '🔴 Stopped'}`"
+        )
+
 async def delete_messages(reply=None):
     time_limit = datetime.now() - timedelta(hours=24)
     tasks = [process_chat_history(chat_id, time_limit) for chat_id in CHAT_IDS]
@@ -180,7 +340,8 @@ async def heartbeat():
         try:
             uptime = str(datetime.now() - start_time).split('.')[0]
             active_jobs = len(scheduler.get_jobs())
-            logger.info(f"💓 Heartbeat | ⏳ Up: {uptime} | 🛠️ Jobs: {active_jobs}")
+            web_status = "🟢" if web_app else "🔴"
+            logger.info(f"💓 Heartbeat | ⏳ Up: {uptime} | 🛠️ Jobs: {active_jobs} | 🌐 Web: {web_status}")
             await asyncio.sleep(300)
         except Exception as e:
             logger.error(f"💔 Heartbeat failed: {e}")
@@ -194,6 +355,9 @@ async def main():
 
     for sig in (signal.SIGTERM, signal.SIGINT):
         loop.add_signal_handler(sig, lambda: shutdown_event.set())
+
+    logger.info("🌐 Starting web server...")
+    web_runner = await start_web_server()
 
     scheduler = AsyncIOScheduler(event_loop=loop)
     scheduler.start()
@@ -215,9 +379,10 @@ async def main():
 
     user.add_handler(MessageHandler(
         handle_user_commands,
-        filters.private & filters.command(["delete", "update", "restart", "chats"])
+        filters.private & filters.command(["delete", "update", "restart", "chats", "webapp"])
     ))
 
+    logger.info("🤖 Starting bot and user clients...")
     await app.start()
     await user.start()
 
@@ -225,23 +390,25 @@ async def main():
     OWNER_ID = me.id
     logger.info(f"🎯 Owner ID auto-set to: {OWNER_ID} (@{me.username or 'Unknown'})")
 
+    ping_task = loop.create_task(ping_web_server())
+    heartbeat_task = loop.create_task(heartbeat())
+
     try:
         await user.send_message(
             me.id,
             "✅ **Auto-Cleaner Bot Started!**\n\n"
             f"📊 Monitoring: `{len(CHAT_IDS)}` groups\n"
             f"🗑️ Auto-delete enabled\n"
-            f"🛠️ Admin commands active for you only.\n"
-            f"ℹ️ Use `/status`, `/chats`, `/delete` as needed."
+            f"🛠️ Admin commands active for you only\n"
+            f"🌐 Web Dashboard: `http://localhost:{PORT}`\n"
+            f"ℹ️ Use `/status`, `/chats`, `/delete`, `/webapp` as needed."
         )
     except Exception as e:
         logger.error(f"📩 Failed to send startup message: {e}")
 
-    heartbeat_task = loop.create_task(heartbeat())
-
     try:
         await delete_messages()
-        logger.info("🚀 Bot is now running on your VPS! 🌐")
+        logger.info("🚀 Bot is now running with web server support! 🌐")
 
         if not CHAT_IDS:
             logger.warning("⚠️ No CHAT_IDS configured — bot will not monitor any chats.")
@@ -254,12 +421,13 @@ async def main():
     finally:
         logger.info("🛑 Shutting down gracefully...")
 
-        if 'heartbeat_task' in locals() and not heartbeat_task.done():
-            heartbeat_task.cancel()
-            try:
-                await heartbeat_task
-            except asyncio.CancelledError:
-                pass
+        for task in [ping_task, heartbeat_task]:
+            if not task.done():
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
 
         await asyncio.gather(
             app.stop() if app and app.is_connected else asyncio.sleep(0),
@@ -270,6 +438,10 @@ async def main():
         if scheduler and scheduler.running:
             scheduler.shutdown()
             logger.info("📋 Scheduler stopped.")
+
+        if web_runner:
+            await web_runner.cleanup()
+            logger.info("🌐 Web server stopped.")
 
         logger.info("✅ Bot stopped gracefully. Goodbye! 👋")
 
