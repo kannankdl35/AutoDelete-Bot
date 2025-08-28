@@ -93,9 +93,9 @@ async def handle_bot_commands(client, message):
 
     if cmd == "start":
         await message.reply_text(
-            "👋 **Hello! I'm your Group Auto-Cleaner Bot.**\n\n"
+            "👋 **Hello! I'm your Group Auto-Cleaner Bot of @cinemagram_links.**\n\n"
             "🗑️ I automatically **delete all messages** after a set time.\n"
-            "✨ Keep your groups **clean, clutter-free, and spam-free!**"
+            "✨ Keep our groups **clean, clutter-free, and spam-free!**"
         )
 
     elif cmd == "status":
@@ -283,4 +283,5 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
+
         logger.info("🛑 Bot stopped manually by user.")
