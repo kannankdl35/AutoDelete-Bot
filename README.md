@@ -11,7 +11,7 @@
 🔹 **Made by**: [PIROXTG](https://github.com/PIROXTG)  
 🔹 **Session Generator**: [@SessionStringZBot](https://t.me/SessionStringZBot) (trusted & secure)  
 🔹 **Support & Help**: [@piroxhelorobot](https://t.me/piroxhelorobot)  
-🔹 **Web App Branch**: [koyeb](https://github.com/PIROXTG/AutoWiper/tree/WebApp) (for cloud hosting)
+🔹 **Web App Branch**: [Web App Support](https://github.com/PIROXTG/AutoWiper/tree/WebApp) (for cloud hosting)
 
 ## 🚨 IMPORTANT SECURITY NOTICE
 
