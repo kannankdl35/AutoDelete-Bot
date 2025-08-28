@@ -13,7 +13,7 @@
 🔹 **Session Generator**: [@SessionStringZBot](https://t.me/SessionStringZBot) (trusted & secure)  
 🔹 **Support & Help**: [@piroxhelorobot](https://t.me/piroxhelorobot)  
 🔹 **Main Repository**: [AutoWiper](https://github.com/PIROXTG/AutoWiper)  
-🔹 **Branch**: `koyeb` (web app enabled)
+🔹 **Branch**: `WebApp` (web app enabled)
 
 ## 🚨 IMPORTANT SECURITY NOTICE
 
