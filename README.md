@@ -4,14 +4,14 @@
 [![Pyrogram](https://img.shields.io/badge/Pyrogram-v2.0-red)](https://docs.pyrogram.org/)
 [![Made with Python](https://img.shields.io/badge/Made%20with-Python-37766B.svg?logo=python&logoColor=white)](https://www.python.org/)
 [![Deploy on Koyeb](https://img.shields.io/badge/Deploy-Koyeb-00C7B7)](https://www.koyeb.com/)
-[![Web App Support](https://img.shields.io/badge/Web%20App-Enabled-brightgreen)](https://github.com/PIROXTG/AutoWiper/tree/koyeb)
+[![Web App Support](https://img.shields.io/badge/Web%20App-Enabled-brightgreen)](https://github.com/PIROXTG/AutoWiper/tree/WebApp)
 
 > **A lightweight Telegram auto-cleaner bot with web dashboard** that automatically deletes messages in groups and channels after a set time. Keep your chats **clutter-free, spam-free, and organized** — automatically. Now with **web monitoring dashboard** for cloud hosting!
 
 🔹 **Made by**: [PIROXTG](https://github.com/PIROXTG)  
 🔹 **Session Generator**: [@SessionStringZBot](https://t.me/SessionStringZBot) (trusted & secure)  
 🔹 **Support & Help**: [@piroxhelorobot](https://t.me/piroxhelorobot)  
-🔹 **Web App Branch**: [koyeb](https://github.com/PIROXTG/AutoWiper/tree/koyeb) (for cloud hosting)
+🔹 **Web App Branch**: [koyeb](https://github.com/PIROXTG/AutoWiper/tree/WebApp) (for cloud hosting)
 
 ## 🚨 IMPORTANT SECURITY NOTICE
 
@@ -450,6 +450,6 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 **🌐 Now with Web Dashboard Support for Better Monitoring!**
 
-[⭐ Star this repo](https://github.com/PIROXTG/AutoWiper) • [📱 Main Branch](https://github.com/PIROXTG/AutoWiper) • [🌐 Koyeb Branch](https://github.com/PIROXTG/AutoWiper/tree/koyeb) • [📢 Join Support](https://t.me/piroxbots)
+[⭐ Star this repo](https://github.com/PIROXTG/AutoWiper) • [📱 Main Branch](https://github.com/PIROXTG/AutoWiper) • [🌐 Koyeb Branch](https://github.com/PIROXTG/AutoWiper/tree/WebApp) • [📢 Join Support](https://t.me/piroxbots)
 
 </div>
