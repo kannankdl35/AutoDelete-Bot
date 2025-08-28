@@ -103,9 +103,12 @@ async def handle_bot_commands(client, message):
         active_jobs = len(scheduler.get_jobs())
 
         cpu_percent = psutil.cpu_percent(interval=1)
+        per_core = psutil.cpu_percent(interval=1, percpu=True)
         memory = psutil.virtual_memory()
+        swap = psutil.swap_memory()
         disk = psutil.disk_usage('/')
         load_avg = psutil.getloadavg() if hasattr(psutil, "getloadavg") else (0, 0, 0)
+        processes = len(psutil.pids())
 
         status_text = (
             f"📊 **Bot Status**\n\n"
@@ -114,10 +117,13 @@ async def handle_bot_commands(client, message):
             f"📌 Monitored Chats: `{len(CHAT_IDS)}`\n"
             f"🛡️ Status: `🟢 Running`\n\n"
             f"💻 **System Stats**\n"
-            f"🔹 CPU: `{cpu_percent}%`\n"
+            f"🔹 CPU Usage: `{cpu_percent}%`\n"
+            f"🔹 Per-Core: `{per_core}`\n"
             f"🔹 RAM: `{memory.percent}% of {round(memory.total / (1024**3), 2)} GB`\n"
+            f"🔹 Swap: `{swap.percent}% of {round(swap.total / (1024**3), 2)} GB`\n"
             f"🔹 Disk: `{disk.percent}% of {round(disk.total / (1024**3), 2)} GB`\n"
-            f"🔹 Load Avg (1m, 5m, 15m): `{load_avg[0]:.2f}, {load_avg[1]:.2f}, {load_avg[2]:.2f}`"
+            f"🔹 Load Avg (1m,5m,15m): `{load_avg[0]:.2f}, {load_avg[1]:.2f}, {load_avg[2]:.2f}`\n"
+            f"🔹 Processes: `{processes}`"
         )
 
         await message.reply_text(status_text)
@@ -272,7 +278,6 @@ async def main():
             logger.info("📋 Scheduler stopped.")
 
         logger.info("✅ Bot stopped gracefully. Goodbye! 👋")
-
 
 if __name__ == "__main__":
     try:
