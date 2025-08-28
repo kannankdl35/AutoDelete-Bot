@@ -93,7 +93,7 @@ async def handle_bot_commands(client, message):
 
     if cmd == "start":
         await message.reply_text(
-            "👋 **Hello! I'm your Group Auto-Cleaner Bot of @cinemagram_links.**\n\n"
+            "👋 **Hello! I'm Group Auto-Cleaner Bot of @cinemagram_links.**\n\n"
             "🗑️ I automatically **delete all messages** after a set time.\n"
             "✨ Keep our groups **clean, clutter-free, and spam-free!**"
         )
@@ -285,3 +285,4 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
 
         logger.info("🛑 Bot stopped manually by user.")
+
