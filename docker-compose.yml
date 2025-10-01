@@ -84,10 +84,10 @@ services:
     container_name: autowiper-healthcheck
     restart: unless-stopped
     environment:
-      - PORT=8000
+      - PORT=5000
     ports:
-      - "8000:8000"
-    command: python -m http.server 8000
+      - "5000:5000"
+    command: python -m http.server 5000
     networks:
       - autowiper-network
     profiles:
@@ -142,4 +142,5 @@ volumes:
 # Access container shell:
 # docker-compose exec autowiper /bin/bash
 #
+
 # ==============================================
