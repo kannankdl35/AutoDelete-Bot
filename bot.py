@@ -95,7 +95,8 @@ async def handle_bot_commands(client, message):
         await message.reply_text(
             "👋 **Hello! I'm Group Auto-Cleaner Bot of @cinemagram_links.**\n\n"
             "🗑️ I automatically **delete all messages** after a set time.\n"
-            "✨ Keep our groups **clean, clutter-free, and spam-free!**"
+            "✨ Keep our groups **clean, clutter-free, and spam-free!**\n\n"
+            "🚀 Need this bot for your group? 📩 **Contact @cmg_4dmin**"
         )
 
     elif cmd == "status":
