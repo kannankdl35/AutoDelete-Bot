@@ -1,7 +1,7 @@
 # List of channel/group IDs to monitor
 CHAT_IDS = [
-    -1001727392022,
-    -1001913860698
+    -1001727392022,  #cinemagram
+    -1001913860698   #seriesgram
 ]
 
 # Duration (in seconds) for each chat_id before messages are auto-deleted
